@@ -24,7 +24,6 @@ def create_data(IM_DIR, ethnie, proportion):
         data.append([np.array(cv2.imread(imname, cv2.IMREAD_GRAYSCALE)), imname])
     np.random.shuffle(data)
     # Reduit le nombre de visages dans le training set
-
     #int(56*proportion / (100-proportion)) calcul du nb d'images à conserver
     a_enlever, cpt_final = prop[proportion][0], prop[proportion][1]   #56 - nb d'images à conserver
     i=0
@@ -60,16 +59,16 @@ def save_loss(history, nb_cc_value, ethnie, proportion):
     plt.plot(range(epoques), d.get('loss'))
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    fig.savefig('ID_Results/'+str(nb_cc_value)+"_"+ethnie+"_"+str(proportion)+"_"+'.png')
+    fig.savefig(fname= 'C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre/ID_Results/'+str(nb_cc_value)+"_"+ethnie+"_"+str(proportion)+"_"+'.png')
 
-def processing_data(data):
+def processing_data(data, nb_im):
     pairs_train=[]
     name_train=[]
 
     for i in range(0,len(data)):
             pairs_train.append(data[i][0]) # image sous forme de matrice
             name_train.append(data[i][1])  # nom de l'image
-        
+            
     xtrain=np.array(pairs_train).astype(int)
     ytrain = to_categorical(np.arange(nb_im)) # one hot encode target values
 
@@ -83,8 +82,8 @@ def processing_data(data):
     return xtrain, ytrain, name_train, datagen.flow(xtrain, ytrain, batch_size=64)
 
 # %%--------------------------------------------------Initialization
-dirname= path.dirname('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/')
-IM_DIR= path.join(dirname, 'STIM_NB_LumNorm')
+dirname= path.dirname('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre')
+IM_DIR= path.join('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/STIM_NB_LumNorm')
 
 # construct the argument parser and parse the arguments
 args = globals().get('args', None)
@@ -96,7 +95,6 @@ print(nb_cc_value, ethnie, proportion)
 
 #create data from folder
 data, nb_reduit, nb_im = create_data(IM_DIR, ethnie, proportion)
-outfile = "ID_Results/"+str(nb_cc_value)+"_"+ethnie+"_"+str(proportion)+"_"+".txt"
 os.chdir(dirname)
 
 #Processing data
