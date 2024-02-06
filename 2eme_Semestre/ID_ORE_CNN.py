@@ -79,17 +79,11 @@ def processing_data(data):
 
     # create generator (1.0/255.0 = 0.003921568627451)
     datagen = ImageDataGenerator(rescale=1.0/255.0)
-    # prepare an iterators to scale images
-    """# confirm scale of pixels
-    print('Train min=%.3f, max=%.3f' % (xtrain.min(), xtrain.max()))
-    print('Batches train=%d' % (len(train_iterator)))
-    batchX, batchy = train_iterator.next()
-    print('Batch shape=%s, min=%.3f, max=%.3f' % (batchX.shape, batchX.min(), batchX.max())) """
     
     return xtrain, ytrain, name_train, datagen.flow(xtrain, ytrain, batch_size=64)
 
 # %%--------------------------------------------------Initialization
-dirname= path.dirname('C:/Users/Guilem/Stage/CNN_ORE/')
+dirname= path.dirname('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/')
 IM_DIR= path.join(dirname, 'STIM_NB_LumNorm')
 
 # construct the argument parser and parse the arguments
