@@ -7,10 +7,13 @@ parser.add_argument("-b", "--ethnie", type=str, help="ethnie reduced")
 parser.add_argument("-c", "--proportion", type=int, help="reduction proportion")
 parser.add_argument("-d", "--epoques", type=int, help="nombre d'epochs")
 
-nb_cc = [10] #[10, 20, 30, 40, 50, 75, 100]
-proportion_test = [40] #[0, 10, 20, 30, 40, 50]
+
+nb_cc = [100] #[10, 20, 30, 40, 50, 75, 100]
+proportion_test = [50] #[0, 10, 20, 30, 40, 50]
 ethnie = ["ch"]
-epochs = 10
+epochs = 10 #[20, 50, 100, 150, 200]
+#batch_size = [10, 20, 30, 40]
+#fonction_act = ['relu', 'sigmoid', 'tanh']
 
 for neurones in nb_cc:
     for eth in ethnie:
@@ -20,7 +23,7 @@ for neurones in nb_cc:
                 args = parser.parse_args(arguments.split())
 
                 # Call the other script using run_path and pass the parsed arguments
-                runpy.run_path("C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre/ID_ORE_CNN.py", run_name="__main__", init_globals={'args': args})
+                runpy.run_path("C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre/test2.py", run_name="__main__", init_globals={'args': args})
 
                
         """ proportion_test.reverse()

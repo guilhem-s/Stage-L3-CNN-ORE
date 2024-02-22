@@ -8,9 +8,9 @@ Created on Tue Dec 12 18:19:34 2023
 import cv2, os
 import numpy as np
 from os import path
-from keras import Sequential
 from sklearn.model_selection import GridSearchCV
 from scikeras.wrappers import KerasClassifier
+from keras import Sequential
 from keras.optimizers import SGD, Adam
 from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from keras.preprocessing.image import ImageDataGenerator
@@ -37,7 +37,7 @@ def create_data(IM_DIR, ethnie, proportion):
             i+=1
     return data, 56 - a_enlever, cpt_final
 
-def create_model(nb_cc_value, nb_im, activation_function):
+def create_model(activation):
     
     model = Sequential() #add model layers
 
@@ -49,9 +49,9 @@ def create_model(nb_cc_value, nb_im, activation_function):
 
     model.add(Flatten())
 
-    model.add(Dense(units=nb_cc_value, activation=activation_function)) 
+    model.add(Dense(units=50, activation=activation)) 
 
-    model.add(Dense(nb_im, activation='softmax'))
+    model.add(Dense(112, activation='softmax'))
     
     return model
 
@@ -103,30 +103,14 @@ os.chdir(dirname)
 xtrain, ytrain, name_train, train_iterator = processing_data(data, nb_im)
 
 #%%----------------------------------------TRAIN 
-opt = Adam()              
-# Créer une instance de KerasClassifier
-model = KerasClassifier(build_fn=create_model, nb_cc_value=64, nb_im=nb_im, epochs=10, batch_size=10, verbose=0)
+# create model
 
-# Définir les paramètres à tester
-param_grid = {
-    'activation_function': ['relu', 'sigmoid', 'tanh'],
-    'batch_size': [10, 20, 30],
-    'epochs': [10, 20, 30]
-}
-# Créer l'objet GridSearchCV
-grid = GridSearchCV(estimator=model, param_grid=param_grid, scoring='accuracy', cv=3)
-
-
-# Effectuer la recherche sur grille
+model = KerasClassifier(model=create_model, epochs=10, batch_size=10)
+# define the grid search parameters
+activation = ['relu', 'tanh', 'sigmoid'] #'softmax', 'softplus', 'softsign', 'hard_sigmoid', 'linear', 
+param_grid = dict(model__activation=activation)
+grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=-1, cv=3)
 grid_result = grid.fit(xtrain, ytrain)
-
-# Afficher les résultats
-print(f"Best parameters: {grid_result.best_params_}")
-print(f"Best accuracy: {grid_result.best_score_}")
-
-#%%----------------------------------------TEST 
-
-
 # summarize results
 print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
 means = grid_result.cv_results_['mean_test_score']

@@ -6,6 +6,7 @@ Created on Tue Dec 12 18:19:34 2023
 """
 
 import cv2, os
+import tensorflow
 import numpy as np
 from os import path
 from keras import Sequential
@@ -16,7 +17,9 @@ from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
-
+config = tensorflow.compat.v1.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tensorflow.compat.v1.Session(config=config)
 def create_data(IM_DIR, ethnie, proportion): 
     # takes images from folder and associates them with a label - create a structure with names - labels - im
     prop = {0: [56, 56], 10: [50, 62], 20: [42, 70], 30: [32, 80], 40: [19, 93], 50: [0, 112]}
@@ -51,7 +54,7 @@ def create_model(nb_cc_value, nb_im, activation_function):
 
     model.add(Dense(units=nb_cc_value, activation=activation_function)) 
 
-    model.add(Dense(nb_im, activation='softmax'))
+    model.add(Dense(nb_im, activation='sigmoid'))
     
     return model
 
@@ -83,6 +86,27 @@ def processing_data(data, nb_im):
     
     return xtrain, ytrain, name_train, datagen.flow(xtrain, ytrain, batch_size=64)
 
+def grid_search(xtrain, ytrain, nb_cc_value, nb_im, opt, batch_size, epochs, activation_functions):
+    best_accuracy = 0
+    params = ""
+    for batch in batch_size:
+        for epoques in epochs:
+            for activation_function in activation_functions:
+                print(batch, " ", activation_function)
+                model = create_model(nb_cc_value, nb_im, activation_function)
+
+                model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+                history = model.fit(xtrain, ytrain, epochs=epoques, batch_size=batch, verbose=3)
+
+                accuracy = np.max(history.history['accuracy'])
+                result = f"{accuracy} pour les paramètres : fon={activation_function}, epoques={epoques}, batch_size={batch}"
+                
+                if accuracy > best_accuracy:
+                    best_accuracy = accuracy
+                    best_params = result
+
+                params += result+'\n'
+    return best_params, params
 # %%--------------------------------------------------Initialization
 dirname= path.dirname('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre')
 IM_DIR= path.join('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/STIM_NB_LumNorm')
@@ -103,34 +127,24 @@ os.chdir(dirname)
 xtrain, ytrain, name_train, train_iterator = processing_data(data, nb_im)
 
 #%%----------------------------------------TRAIN 
+"""learning_rate = [0.001, 0.01, 0.1, 0.2, 0.3]
+momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]"""
+
+# Définir les valeurs à tester
+activation_functions = ['relu', 'sigmoid', 'tanh']
+batch_size = [10, 20, 30, 40]
+epoques = [20, 50, 100, 150]
 opt = Adam()              
-# Créer une instance de KerasClassifier
-model = KerasClassifier(build_fn=create_model, nb_cc_value=64, nb_im=nb_im, epochs=10, batch_size=10, verbose=0)
+"""opt2 = SGD(learning_rate, momentum) # descente de gradient""" 
 
-# Définir les paramètres à tester
-param_grid = {
-    'activation_function': ['relu', 'sigmoid', 'tanh'],
-    'batch_size': [10, 20, 30],
-    'epochs': [10, 20, 30]
-}
-# Créer l'objet GridSearchCV
-grid = GridSearchCV(estimator=model, param_grid=param_grid, scoring='accuracy', cv=3)
+# Appeler la fonction de recherche sur grille
+params, best_params = grid_search(xtrain, ytrain, nb_cc_value, nb_im, opt, batch_size, epochs=epoques, activation_functions=activation_functions)
 
-
-# Effectuer la recherche sur grille
-grid_result = grid.fit(xtrain, ytrain)
-
-# Afficher les résultats
-print(f"Best parameters: {grid_result.best_params_}")
-print(f"Best accuracy: {grid_result.best_score_}")
+#plot and save training curve
+#save_loss(history, nb_cc_value, ethnie, proportion)
 
 #%%----------------------------------------TEST 
 
-
 # summarize results
-print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
-means = grid_result.cv_results_['mean_test_score']
-stds = grid_result.cv_results_['std_test_score']
-params = grid_result.cv_results_['params']
-for mean, stdev, param in zip(means, stds, params):
-    print("%f (%f) with: %r" % (mean, stdev, param))
+print(best_params)
+print(params)
