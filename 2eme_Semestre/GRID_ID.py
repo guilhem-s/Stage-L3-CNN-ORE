@@ -40,7 +40,7 @@ def create_data(IM_DIR, ethnie, proportion):
             i+=1
     return data, 56 - a_enlever, cpt_final
 
-def create_model(nb_cc_value, nb_im, activation_function):
+def create_model(nb_cc_value, nb_im):
     
     model = Sequential() #add model layers
 
@@ -52,7 +52,7 @@ def create_model(nb_cc_value, nb_im, activation_function):
 
     model.add(Flatten())
 
-    model.add(Dense(units=nb_cc_value, activation=activation_function)) 
+    model.add(Dense(units=nb_cc_value, activation="relu")) 
 
     model.add(Dense(nb_im, activation='sigmoid'))
     
@@ -86,20 +86,19 @@ def processing_data(data, nb_im):
     
     return xtrain, ytrain, name_train, datagen.flow(xtrain, ytrain, batch_size=64)
 
-def grid_search(xtrain, ytrain, nb_cc_value, nb_im, opt, batch_size, epochs, activation_functions):
+def grid_search(xtrain, ytrain, nb_cc_value, nb_im, opt, batch_size, epochs):
     best_accuracy = 0
     params = ""
     for batch in batch_size:
         for epoques in epochs:
-            for activation_function in activation_functions:
-                print(batch, " ", activation_function)
-                model = create_model(nb_cc_value, nb_im, activation_function)
+                print(batch)
+                model = create_model(nb_cc_value, nb_im)
 
                 model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
                 history = model.fit(xtrain, ytrain, epochs=epoques, batch_size=batch, verbose=3)
 
                 accuracy = np.max(history.history['accuracy'])
-                result = f"{accuracy} pour les paramètres : fon={activation_function}, epoques={epoques}, batch_size={batch}"
+                result = f"{accuracy} pour les paramètres : epoques={epoques}, batch_size={batch}"
                 
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
@@ -131,14 +130,13 @@ xtrain, ytrain, name_train, train_iterator = processing_data(data, nb_im)
 momentum = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9]"""
 
 # Définir les valeurs à tester
-activation_functions = ['relu', 'sigmoid', 'tanh']
 batch_size = [10, 20, 30, 40]
 epoques = [20, 50, 100, 150]
 opt = Adam()              
 """opt2 = SGD(learning_rate, momentum) # descente de gradient""" 
 
 # Appeler la fonction de recherche sur grille
-params, best_params = grid_search(xtrain, ytrain, nb_cc_value, nb_im, opt, batch_size, epochs=epoques, activation_functions=activation_functions)
+params, best_params = grid_search(xtrain, ytrain, nb_cc_value, nb_im, opt, batch_size, epochs=epoques)
 
 #plot and save training curve
 #save_loss(history, nb_cc_value, ethnie, proportion)

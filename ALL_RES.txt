@@ -1,3 +1,7 @@
-10, ch, 40, 0.010753, 0.000000, 0.017857, Il y a 56 caucasiens et 37 chinois 
-100, ch, 50, 0.017857, 0.035714, 0.000000, Il y a 56 caucasiens et 56 chinois 
-100, ch, 50, 0.008929, 0.000000, 0.035714, Il y a 56 caucasiens et 56 chinois 
+100, ch, 40, 1.000000, 0.785714, 0.357143, Il y a 56 caucasiens et 37 chinois 
+100, ch, 30, 1.000000, 0.714286, 0.107143, Il y a 56 caucasiens et 24 chinois 
+100, ch, 20, 0.685714, 0.375000, 0.089286, Il y a 56 caucasiens et 14 chinois 
+100, ch, 10, 0.854839, 0.446429, 0.000000, Il y a 56 caucasiens et 6 chinois 
+100, ch, 0, 1.000000, 0.803571, 0.000000, Il y a 56 caucasiens et 0 chinois 
+100, ch, 20, 1.000000, 0.750000, 0.214286, Il y a 56 caucasiens et 14 chinois 
+100, ch, 10, 1.000000, 0.714286, 0.053571, Il y a 56 caucasiens et 6 chinois 

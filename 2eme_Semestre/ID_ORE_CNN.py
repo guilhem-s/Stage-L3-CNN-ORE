@@ -5,15 +5,17 @@ Created on Tue Dec 12 18:19:34 2023
 @author: Guilem
 """
 
-import cv2, os
+import cv2, os, gc, csv, argparse
 import numpy as np
 from os import path
+from keras.metrics import MeanAbsoluteError
 from keras import Sequential
-from keras.optimizers import SGD, Adam
+from keras.optimizers import SGD
 from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
+from scipy.spatial import distance
 
 def create_data(IM_DIR, ethnie, proportion): 
     # takes images from folder and associates them with a label - create a structure with names - labels - im
@@ -49,7 +51,7 @@ def create_model(nb_cc_value, nb_im):
 
     model.add(Dense(units=nb_cc_value, activation='relu')) 
 
-    model.add(Dense(nb_im, activation='softmax'))
+    model.add(Dense(nb_im, activation='sigmoid'))
     
     return model
 
@@ -69,7 +71,7 @@ def processing_data(data, nb_im):
             pairs_train.append(data[i][0]) # image sous forme de matrice
             name_train.append(data[i][1])  # nom de l'image
             
-    xtrain=np.array(pairs_train).astype(int)
+    xtrain=np.array(pairs_train)
     ytrain = to_categorical(np.arange(nb_im)) # one hot encode target values
 
     # reshape dataset to have a single channel
@@ -82,8 +84,14 @@ def processing_data(data, nb_im):
     return xtrain, ytrain, name_train, datagen.flow(xtrain, ytrain, batch_size=64)
 
 # %%--------------------------------------------------Initialization
-dirname= path.dirname('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre')
-IM_DIR= path.join('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/STIM_NB_LumNorm')
+directory= path.dirname('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/')
+IM_DIR= path.join(directory, 'STIM_NB_LumNorm')
+results_csv_path = path.join(directory, 'results.csv')
+if not path.exists(results_csv_path):
+    with open(results_csv_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['run', 'nb_cc','ethnie','proportion', 'name_train', 'correct'])
+dirname = path.join(directory, '2eme_Semestre')
 
 # construct the argument parser and parse the arguments
 args = globals().get('args', None)
@@ -96,15 +104,13 @@ print(nb_cc_value, ethnie, proportion)
 #create data from folder
 data, nb_reduit, nb_im = create_data(IM_DIR, ethnie, proportion)
 os.chdir(dirname)
-
 #Processing data
 xtrain, ytrain, name_train, train_iterator = processing_data(data, nb_im)
 
 #%%----------------------------------------TRAIN 
-opt = Adam()              
-opt2 = SGD(learning_rate=0.1, momentum=0.9) # descente de gradient 
+opt  = SGD(learning_rate=1, momentum=0.75) # descente de gradient 
 model = create_model(nb_cc_value, nb_im)
-model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=opt, loss= 'mse', metrics=MeanAbsoluteError())
 history = model.fit(train_iterator, steps_per_epoch=len(train_iterator), epochs=epoques)
 
 #plot and save training curve
@@ -112,47 +118,54 @@ save_loss(history, nb_cc_value, ethnie, proportion)
 
 #%%----------------------------------------TEST 
 
-results, acc = model.evaluate(train_iterator, steps=len(train_iterator), verbose=0)
-
-print(f"Accuracy du modèle : {acc*100}")
+prediction= model.predict(xtrain)
+#sans lab_train mais avec ytrain:
+cpt_correct = 0
+with open(results_csv_path, mode='a', newline='') as file:
+    writer = csv.writer(file)
+    for i in range(len(prediction)):
+        correct_vector_distance = distance.euclidean(prediction[i], ytrain[i])
+        other_distances = [distance.euclidean(prediction[i], ytrain[j]) for j in range(len(ytrain)) if j != i]
+        if correct_vector_distance <= min(other_distances):
+            correct = 1
+            cpt_correct += 1
+        else:
+            correct = 0
+        writer.writerow([nb_cc_value, ethnie, proportion, name_train[i], correct])
+print("nb correct: ", cpt_correct, 'accuracy: ', np.round((cpt_correct / len(prediction)), 3))
 #save detailed results
 xtrain=xtrain+0.0
 prediction= model.predict(xtrain)
-
+#######################################################################################
 #save MEAN results dissociating CAU and ASIAN 
+cpt_correct_ch, cpt_correct_cau = 0, 0
+for i in range(len(prediction)):
+    # distance pred à ground truth
+    correct_vector_distance = distance.euclidean(prediction[i], ytrain[i]) #lab_
+    # distances entre la pred et tous les autres vecteurs
+    other_distances = [distance.euclidean(prediction[i], ytrain[j]) for j in range(nb_im) if j != i] #lab_
+    #vérifie si la distance est bien la plus petite de toutes
+    is_correct_prediction = correct_vector_distance <= min(other_distances)
+    if "ch" in name_train[i]:
+        cpt_correct_ch += is_correct_prediction
+    elif "cau" in name_train[i]:
+        cpt_correct_cau += is_correct_prediction
 
-cpt_correct_ch= cpt_correct_cau=0
-for i in range(0,len(prediction)): 
-    if ("ch" in name_train[i]):
-        if np.argmax(prediction[i]) == np.argmax(ytrain[i]) :
-            cpt_correct_ch += 1
-            
-    if ("cau" in name_train[i]):
-        if np.argmax(prediction[i]) == np.argmax(ytrain[i]) :
-            cpt_correct_cau += 1
+# proportions d'essais corrects, ajout d'un epsilon pour pas diviser par zéro
+proportion_correct_ch = cpt_correct_ch / (len([name for name in name_train if "ch" in name]) + 2.220446049250313e-16)
+proportion_correct_cau = cpt_correct_cau / (len([name for name in name_train if "cau" in name]) + 2.220446049250313e-16)
+# f2.write("\n %s %s %s %s %f %f" % (args["run"], args["hidden"], args["ethnie"], args["proportion"], proportion_correct_cau, proportion_correct_ch))
+# f2.close()
 
+summary_csv_path = path.join(dirname, 'summary_results.csv')
+if not path.exists(summary_csv_path):
+    with open(summary_csv_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        # nom variables
+        writer.writerow(['hidden', 'ethnie', 'proportion', 'proportion_correct_cau', 'proportion_correct_ch'])
+with open(summary_csv_path, mode='a', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow([nb_cc_value, ethnie, proportion, proportion_correct_cau, proportion_correct_ch])
 
-f2= open(path.join(dirname,'ALL_RES.txt'),"a+")
-
-cpt_ch = 0
-cpt_cau = 0
-for i in range(0,len(data)):
-    if "ch" in data[i][1]:
-        cpt_ch+=1
-    elif "cau" in data[i][1]:
-        cpt_cau+=1
-s = "Il y a " + str(cpt_cau) + " caucasiens et " + str(cpt_ch) + " chinois"
-print(s)
-if ethnie == "ch":
-    if cpt_correct_ch != 0: # On réduit les caucasiens, 56 visages chinois et le reste en caucasien
-        f2.write("%i, %s, %s, %f, %f, %f, %s \n" %(nb_cc_value, ethnie, proportion, acc, cpt_correct_cau/56, cpt_correct_ch / nb_reduit, s ))
-    else:
-        f2.write("%i, %s, %s, %f, %f, %f, %s \n" %(nb_cc_value, ethnie, proportion, acc, cpt_correct_cau/56, 0, s ))
-
-else:
-    if cpt_correct_cau != 0:
-        f2.write("%i, %s, %s, %f, %f, %f, %s \n" %(nb_cc_value, ethnie, proportion, acc, cpt_correct_cau / nb_reduit, cpt_correct_ch/56, s ))
-    else:
-        f2.write("%i, %s, %s, %f, %f, %f, %s \n" %(nb_cc_value, ethnie, proportion, acc, 0, cpt_correct_ch/56, s ))
-
-f2.close()
+del data, xtrain, ytrain, prediction, model, history
+gc.collect()
