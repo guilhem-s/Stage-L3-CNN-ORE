@@ -5,9 +5,10 @@ Created on Tue Dec 12 18:19:34 2023
 @author: Guilem
 """
 
-import cv2, os, gc, csv, argparse
+import cv2, os, gc, csv
 import numpy as np
 from os import path
+import time
 from keras.metrics import MeanAbsoluteError
 from keras import Sequential
 from keras.optimizers import SGD
@@ -41,15 +42,16 @@ def create_model(nb_cc_value, nb_im):
     
     model = Sequential() #add model layers
 
-    model.add(Conv2D(32, (3, 3), activation="relu", input_shape=(300, 300, 1)))
+    model.add(Conv2D(16, (5, 5), activation="relu", input_shape=(300, 300, 1)))
     model.add(MaxPooling2D((2, 2)))
-
+    model.add(Conv2D(32, (3, 3), activation="relu"))
+    model.add(MaxPooling2D((2, 2)))
     model.add(Conv2D(64, (3, 3), activation="relu"))
-    model.add(MaxPooling2D((2, 2)))
 
     model.add(Flatten())
-
-    model.add(Dense(units=nb_cc_value, activation='relu')) 
+ 
+    model.add(Dense(120, activation='relu'))
+    model.add(Dense(units=nb_cc_value, activation='relu'))
 
     model.add(Dense(nb_im, activation='sigmoid'))
     
@@ -107,8 +109,10 @@ os.chdir(dirname)
 #Processing data
 xtrain, ytrain, name_train, train_iterator = processing_data(data, nb_im)
 
+
+
 #%%----------------------------------------TRAIN 
-opt  = SGD(learning_rate=1, momentum=0.75) # descente de gradient 
+opt  = SGD(learning_rate=0.01, momentum=0.9) # descente de gradient 
 model = create_model(nb_cc_value, nb_im)
 model.compile(optimizer=opt, loss= 'mse', metrics=MeanAbsoluteError())
 history = model.fit(train_iterator, steps_per_epoch=len(train_iterator), epochs=epoques)
