@@ -64,7 +64,7 @@ def save_loss(history, nb_cc_value, ethnie, proportion):
     plt.plot(range(epoques), d.get('loss'))
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    fig.savefig(fname= 'C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre/ID_Results/'+str(nb_cc_value)+"_"+ethnie+"_"+str(proportion)+"_"+'.png')
+    fig.savefig(fname= 'C:/Users/guilh/OneDrive/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre/ID_Results/'+str(nb_cc_value)+"_"+ethnie+"_"+str(proportion)+"_"+'.png')
 
 def processing_data(data, nb_im):
     pairs_train=[]
@@ -108,8 +108,8 @@ def grid_search(xtrain, ytrain, nb_cc_value, nb_im, opt, batch_size, epochs, act
                 params += result+'\n'
     return best_params, params
 # %%--------------------------------------------------Initialization
-dirname= path.dirname('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre')
-IM_DIR= path.join('C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/STIM_NB_LumNorm')
+dirname= path.dirname('C:/Users/guilh/OneDrive/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre')
+IM_DIR= path.join('C:/Users/guilh/OneDrive/Documents/GitHub/Stage-L3-CNN-ORE/STIM_NB_LumNorm')
 
 # construct the argument parser and parse the arguments
 args = globals().get('args', None)

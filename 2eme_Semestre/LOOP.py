@@ -23,7 +23,7 @@ for neurones in nb_cc:
                 args = parser.parse_args(arguments.split())
 
                 # Call the other script using run_path and pass the parsed arguments
-                runpy.run_path("C:/Users/Guilem/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre/test2.py", run_name="__main__", init_globals={'args': args})
+                runpy.run_path("C:/Users/guilh/OneDrive/Documents/GitHub/Stage-L3-CNN-ORE/2eme_Semestre/GRID_ID.py", run_name="__main__", init_globals={'args': args})
 
                
         """ proportion_test.reverse()

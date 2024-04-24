@@ -101,7 +101,7 @@ os.chdir(dirname)
 xtrain, ytrain, name_train, train_iterator = processing_data(data, nb_im)
 
 #%%----------------------------------------TRAIN 
-opt = Adam()              
+opt = Adam()             
 opt2 = SGD(learning_rate=0.1, momentum=0.9) # descente de gradient 
 model = create_model(nb_cc_value, nb_im)
 model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
