@@ -1,0 +1,68 @@
+Résumé des tests sur la tâche d'identification : 
+
+La tâche d'identification que nous faisions consistait à associer chaque image du dataset Stim NB LUM NORM à un vecteur aléatoire de 56 unités 
+comprises entre 0 et 1. 
+Ce faisant, l'espace latent du réseau qui effectuait cette tâche se structurait en fonction de vers quel vecteur aléatoire il fallait associer
+telle ou telle image. 
+Cela signifie que la répartition au sein de l'espace latent est aléatoire et non pas structuré en fonction de la similarité perceptive des 
+visages tel que supposé par la Face space theory de Tim Valentine (1991). 
+
+Cela nous mène à supposer que, si l'on souhaite tester la théorie de Tim Valentine, il nous faut modéliser un agent cognitif dont la 
+structure latente est structurée en fonction de la distribution des données d'entraînement, et non pas de l'association à vecteur aléatoire 
+uniquement. Un réseau de neurones de type autoencodeur (AE) semble être un bon candidat pour cette modélisation. En effet, l'espace latent 
+d'un AE est structuré en fonction de la tâche que celui-ci a à accomplir. Or, celui-ci vise à modéliser une fonction identité sur les images 
+qu'il reçoit en entrée. Ainsi, face à toute donnée d'entraînement, l'AE apprends à la reconstruire en sortie. Cette fonction modélisée 
+peut être dite bijective, au même titre que notre tâche d'identification car, à l'inverse d'un classifieur ou d'un régresseur, elle n'associe
+a priori qu'une et une seule sortie unique à toute donnée d'entrée. Il existe donc une relation en un pour un entre l'ensemble des données 
+d'entrée et l'ensemble des données de sortie. 
+
+Par ailleurs, et à l'inverse d'un classifieur, le but de l'AE n'est pas de trouver l'hyperplan séparant le mieux les données d'entrée mais 
+celui sur lequel les données se projettent le mieux pour être représentées dans un espace de dimensions réduites. Il peut ainsi être vu comme 
+une extension non linéaire de la PCA (et un autoencodeur à fonctions d'activations linéaires et à perte de type distance euclidienne réalise 
+une PCA sur son espace latent de dimensions réduites). L'AE a une structure en double entonnoirs inversés, le premier constituant l'encodeur 
+et le deuxième le décodeur. L'encodeur a donc pour but, lors de l'entraînement, de découvrir les dimensions expliquant le mieux les données 
+tandis que la tâche du décodeur est, à partir de l'espace latent de dimensions réduites, d'apprendre à les reproduire le plus fidèlement 
+possible. 
+
+La littérature sur la détection d'anomalies grâce à des autoencodeurs semble en faveur de notre hypothèse selon laquelle l'AE est un bon 
+candidat pour modéliser le perceptual narrowing. En effet, un des résultats notables de cette littérature est que la réduction de la taille 
+de l'espace latent dans un AE le mène à mapper les données encore non rencontrées sur ses attracteurs. Autrement dit, il reproduit ce qu'il 
+n'a encore jamais vu comme les données qu'il a déjà rencontrées et non pas comme une reconstruction fidèle, à la manière d'un japonais qui 
+de par la langue dans laquelle il s'exprime avec son entourage, ne reproduit que très difficilement le son "r" car sa la langue ne le contient
+pas, et le reproduit donc comme le son "l". 
+
+---
+
+Par ailleurs, en cours de semestre, nous avons mené plusieurs tests pour savoir comment le réseau apprenait à identifier les images du dataset 
+Stim NB LUM NORM. Parmis ceux-ci nous avons utilisé la méthode eigen-cam (cf article : https://arxiv.org/abs/2008.00299) qui nous a permis 
+d'obtenir des cartes de saillance nous montrons les pixels, dans l'espace de l'image en entrée du réseau, sur lesquels ce dernier se base pour 
+effectuer son identification. Nous avons obtenu deux résultats notables : 
+1°) Tout d'abord, avec le dataset Stim NB LUM NORM qui ne comporte que 56 visages caucasiens et 56 visages asiatiques, le réseau n'effectue 
+son identification que grâce au minimum de pixels possibles. En effet, les cartes obtenues nous montrent alors que les pixels les plus 
+saillants pour le réseau sont les contours du visages. Cela ne reproduit donc pas les résultats de la littérature qui avaient été obtenus, 
+par exemple, par John et al. 2021 (cf fig1 A de l'article : https://doi.org/10.48550/arXiv.2105.01386) lors d'une tâche de reconnaissance 
+faciale.
+
+De plus, pré-entraîner et appliquer un transfer learning sur notre réseau identificateur depuis le dataset VGG (qui comporte de très nombreuses 
+images pour chaque identité) nous a aidé à régulariser nos filtres de convolutions, qui montraient alors une préférence pour les yeux et la 
+bouche des personnes. Toutefois, faire varier la proportion d'ethnie asiatique ou caucasienne vue à l'entraînement ne modifiait en rien 
+(ou très faiblement) la différence entre les cartes de saillance (différence calculée en termes de contraste par d de Cohen, c'est-à-dire que 
+chaque pixel de l'image se voit associer un d de Cohen). 
+La carte de saillance en d de Cohen est calculé de la manière suivante :
+- d'abord nous calculons une carte moyenne pour l'ethnie asiatique et pour l'ethnie caucasienne, chacune correspondant à la moyenne des cartes 
+de saillance obtenue sur l'ethnie respective en phase de test (chaque pixel se voit associer la moyenne des pixels en même coordonnée dans 
+l'espace (i,j) de l'image sur l'axe de toutes les cartes)
+- deuxièmement nous calculons deux cartes d'écart-types sur chaque ethnie respectivement (chaque pixel se voit associer l'écart-type des 
+pixels en même coordonnée dans l'espace (i,j) de l'image sur l'axe de toutes les cartes)
+- troisièmement, nous appliquons la formule du d de Cohen, à savoir la différence des moyennes normalisées par la racine carrée de la 
+moyenne des variances associées à chaque groupe
+
+En comparant visuellement les cartes de saillance en d de Cohen pour un cas où le réseau est biaisé en faveur des caucasiens vs. un cas où il 
+est biaisé en faveur des asiatiques, nous n'observons pas de différences importantes. Or, nous nous serions attendus à reproduire les résultats 
+obtenus en eye-tracking et déjà mis en avant par la revue de littérature de Lee, Quinn & Pascalis (2017) (cf premier paragraphe de la p259 de 
+l'article: https://doi.org/10.1177/096372141769027). Autrement dit, nous nous attendions à ce que nos cartes de saillance représentent 
+des pixels saillants au niveau des yeux indépendamment de l'ethnie en image d'entrée lorsque le réseau est biaisé en faveur des caucasiens 
+par son optimisation à l'entraînement. À l'inverse, nous nous attendions à ce qu'un réseau biaisé en faveur de l'identification de l'ethnie 
+asiatique représente des pixels saillants au niveau du nez lorsqu'une image de visage d'ethnie asiatique, mais centré sur les yeux lorsqu'on 
+lui présente une image de visage d'ethnie caucasienne. 
+
