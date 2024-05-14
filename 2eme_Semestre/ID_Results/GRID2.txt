@@ -1,7 +1,0 @@
-Best parameters: {'learning_rate': 0.9, 'momentum': 0.77}
-Best parameters: {'learning_rate': 1, 'momentum': 0.76}
-Best parameters: {'learning_rate': 1, 'momentum': 0.75}
-
-
-
-Best parameters: {'learning_rate': 0.6, 'momentum': 0.7}Best parameters: {'learning_rate': 0.6, 'momentum': 0.7}
